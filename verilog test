@@ -1,0 +1,70 @@
+module top_module (
+    input clk,
+    input reset,
+    input enable,
+    output wire [15:0] q,
+    output wire [3:1] ena
+);
+
+    // Единицы
+    bcd_digit d0 (
+        .clk(clk),
+        .reset(reset),
+        .enable(enable),
+        .q(q[3:0]),
+        .carry(ena[1])
+    );
+
+    // Десятки
+    bcd_digit d1 (
+        .clk(clk),
+        .reset(reset),
+        .enable(ena[1] && enable),  // Учитываем общий enable
+        .q(q[7:4]),
+        .carry(ena[2])
+    );
+
+    // Сотни
+    bcd_digit d2 (
+        .clk(clk),
+        .reset(reset),
+        .enable(ena[2] && enable),  // Учитываем общий enable
+        .q(q[11:8]),
+        .carry(ena[3])
+    );
+
+    // Тысячи
+    bcd_digit d3 (
+        .clk(clk),
+        .reset(reset),
+        .enable(ena[3] && enable),  // Учитываем общий enable
+        .q(q[15:12]),
+        .carry() // дальше не используем
+    );
+
+endmodule
+
+module bcd_digit (
+    input wire clk,
+    input wire reset,
+    input wire enable,
+    output reg [3:0] q,
+    output wire carry
+);
+
+    always @(posedge clk) begin
+        if (reset) begin
+            q <= 4'd0;
+        end else if (enable) begin
+            if (q == 4'd9) begin
+                q <= 4'd0;
+            end else begin
+                q <= q + 4'd1;
+            end
+        end
+    end
+
+    // Перенос активен, когда разряд достиг 9 И разрешён счёт
+    assign carry = enable && (q == 4'd9);
+
+endmodule
